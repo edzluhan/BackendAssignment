@@ -12,6 +12,7 @@ import static com.origin.backendassignment.domain.House.OwnershipStatus.OWNED;
 import static com.origin.backendassignment.domain.InsuranceRange.ECONOMIC;
 import static com.origin.backendassignment.domain.InsuranceRange.INELIGIBLE;
 import static com.origin.backendassignment.domain.InsuranceRange.REGULAR;
+import static com.origin.backendassignment.domain.InsuranceRange.RESPONSIBLE;
 import static com.origin.backendassignment.domain.MaritalStatus.MARRIED;
 import static com.origin.backendassignment.domain.MaritalStatus.SINGLE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -22,20 +23,20 @@ class RiskServiceTest {
 
     @Test
     void ineligibleForDisabilityWhenNoIncome() {
-        UserProfile request = UserProfile.builder()
+        UserProfile userProfile = UserProfile.builder()
                 .riskQuestions(new Integer[]{0, 1, 0})
                 .dependents(0)
                 .age(30)
                 .income(0)
                 .build();
 
-        InsuranceRange disability = service.calculateRisk(request).getDisability();
+        InsuranceRange disability = service.calculateRisk(userProfile).getDisability();
         assertEquals(INELIGIBLE, disability);
     }
 
     @Test
     void ineligibleForAutoWhenHasNoVehicle() {
-        UserProfile request = UserProfile.builder()
+        UserProfile userProfile = UserProfile.builder()
                 .riskQuestions(new Integer[]{0, 1, 0})
                 .income(10)
                 .age(30)
@@ -43,13 +44,13 @@ class RiskServiceTest {
                 .vehicle(null)
                 .build();
 
-        InsuranceRange auto = service.calculateRisk(request).getAuto();
+        InsuranceRange auto = service.calculateRisk(userProfile).getAuto();
         assertEquals(INELIGIBLE, auto);
     }
 
     @Test
     void ineligibleForHomeWhenHasNoHouse() {
-        UserProfile request = UserProfile.builder()
+        UserProfile userProfile = UserProfile.builder()
                 .riskQuestions(new Integer[]{0, 1, 0})
                 .income(10)
                 .dependents(0)
@@ -57,13 +58,13 @@ class RiskServiceTest {
                 .house(null)
                 .build();
 
-        InsuranceRange home = service.calculateRisk(request).getHome();
+        InsuranceRange home = service.calculateRisk(userProfile).getHome();
         assertEquals(INELIGIBLE, home);
     }
 
     @Test
     void ineligibleForDisabilityAndLifeWhenHas60OrMore() {
-        UserProfile request = UserProfile.builder()
+        UserProfile userProfile = UserProfile.builder()
                 .riskQuestions(new Integer[]{0, 1, 0})
                 .income(10)
                 .dependents(0)
@@ -71,7 +72,7 @@ class RiskServiceTest {
                 .maritalStatus(SINGLE)
                 .build();
 
-        RiskResponse response = service.calculateRisk(request);
+        RiskResponse response = service.calculateRisk(userProfile);
         InsuranceRange disability = response.getDisability();
         InsuranceRange life = response.getLife();
         assertEquals(INELIGIBLE, disability);
@@ -79,177 +80,38 @@ class RiskServiceTest {
     }
 
     @Test
-    void reducesAllRisksByTwoWhenYoungerThanThirty() {
-        UserProfile request = UserProfile.builder()
-                .riskQuestions(new Integer[]{0, 1, 0})
-                .income(10)
-                .dependents(0)
-                .age(29)
-                .house(new House(OWNED))
-                .build();
-
-        RiskResponse response = service.calculateRisk(request);
-
-        RiskResponse expectedResponse = RiskResponse.builder()
-                .auto(INELIGIBLE)
-                .disability(ECONOMIC)
-                .home(ECONOMIC)
-                .life(ECONOMIC)
-                .build();
-
-        assertEquals(expectedResponse, response);
-    }
-
-    @Test
-    void reducesAllRisksByOneWhenAgeEqualsOrHigherThanThirty() {
-        UserProfile request = UserProfile.builder()
-                .riskQuestions(new Integer[]{0, 1, 0})
-                .income(10)
-                .dependents(0)
-                .age(30)
-                .house(new House(OWNED))
-                .maritalStatus(SINGLE)
-                .build();
-
-        RiskResponse response = service.calculateRisk(request);
-
-        RiskResponse expectedResponse = RiskResponse.builder()
-                .auto(INELIGIBLE)
-                .disability(ECONOMIC)
-                .home(ECONOMIC)
-                .life(ECONOMIC)
-                .build();
-
-        assertEquals(expectedResponse, response);
-    }
-
-    @Test
-    void reducesAllRisksByOneWhenAgeLowerOrEqualsThanForty() {
-        UserProfile request = UserProfile.builder()
-                .riskQuestions(new Integer[]{0, 1, 0})
-                .income(10)
-                .dependents(0)
-                .age(40)
-                .house(new House(OWNED))
-                .build();
-
-        RiskResponse response = service.calculateRisk(request);
-
-        RiskResponse expectedResponse = RiskResponse.builder()
-                .auto(INELIGIBLE)
-                .disability(ECONOMIC)
-                .home(ECONOMIC)
-                .life(ECONOMIC)
-                .build();
-
-        assertEquals(expectedResponse, response);
-    }
-
-    @Test
-    void reducesAllRisksByOneWhenIncomeIsHigherThan200k() {
-        UserProfile request = UserProfile.builder()
-                .riskQuestions(new Integer[]{0, 1, 0})
-                .income(200001)
-                .dependents(0)
-                .age(20)
-                .house(new House(OWNED))
-                .maritalStatus(SINGLE)
-                .build();
-
-        RiskResponse response = service.calculateRisk(request);
-
-        RiskResponse expectedResponse = RiskResponse.builder()
-                .auto(INELIGIBLE)
-                .disability(ECONOMIC)
-                .home(ECONOMIC)
-                .life(ECONOMIC)
-                .build();
-
-        assertEquals(expectedResponse, response);
-    }
-
-    @Test
-    void increaseHomeAndDisabilityRisksWhenHouseIsMortgaged() {
-        UserProfile request = UserProfile.builder()
-                .riskQuestions(new Integer[]{0, 1, 0})
-                .income(10)
-                .dependents(0)
-                .age(20)
-                .house(new House(MORTGAGED))
-                .maritalStatus(SINGLE)
-                .build();
-
-        RiskResponse response = service.calculateRisk(request);
-
-        RiskResponse expectedResponse = RiskResponse.builder()
-                .auto(INELIGIBLE)
-                .disability(ECONOMIC)
-                .home(ECONOMIC)
-                .life(ECONOMIC)
-                .build();
-
-        assertEquals(expectedResponse, response);
-    }
-
-    @Test
-    void increaseDisabilityAndLifeWhenHasDependents() {
-        UserProfile request = UserProfile.builder()
-                .riskQuestions(new Integer[]{0, 1, 0})
-                .income(10)
-                .dependents(1)
-                .age(20)
-                .house(new House(MORTGAGED))
-                .maritalStatus(SINGLE)
-                .build();
-
-        RiskResponse response = service.calculateRisk(request);
-
-        RiskResponse expectedResponse = RiskResponse.builder()
-                .auto(INELIGIBLE)
-                .disability(REGULAR)
-                .home(ECONOMIC)
-                .life(ECONOMIC)
-                .build();
-
-        assertEquals(expectedResponse, response);
-    }
-
-    @Test
-    void increaseLifeAndReduceDisabilityWhenMarried() {
-        UserProfile request = UserProfile.builder()
-                .riskQuestions(new Integer[]{0, 1, 0})
-                .income(10)
-                .dependents(0)
-                .age(20)
-                .house(new House(OWNED))
+    void ineligibleForAll() {
+        UserProfile userProfile = UserProfile.builder()
+                .age(60)
+                .dependents(2)
+                .house(null)
+                .income(0)
                 .maritalStatus(MARRIED)
+                .riskQuestions(new Integer[]{0, 1, 0})
+                .vehicle(null)
                 .build();
-
-        RiskResponse response = service.calculateRisk(request);
 
         RiskResponse expectedResponse = RiskResponse.builder()
                 .auto(INELIGIBLE)
-                .disability(ECONOMIC)
-                .home(ECONOMIC)
-                .life(ECONOMIC)
+                .disability(INELIGIBLE)
+                .home(INELIGIBLE)
+                .life(INELIGIBLE)
                 .build();
 
-        assertEquals(expectedResponse, response);
+        assertEquals(expectedResponse, service.calculateRisk(userProfile));
     }
 
     @Test
-    void increaseAutoWhenVehicleIsNew() {
-        UserProfile request = UserProfile.builder()
-                .riskQuestions(new Integer[]{0, 1, 0})
-                .income(10)
+    void allEconomic() {
+        UserProfile userProfile = UserProfile.builder()
+                .age(28)
                 .dependents(0)
-                .age(20)
                 .house(new House(OWNED))
+                .income(300000)
                 .maritalStatus(SINGLE)
-                .vehicle(new Vehicle(2020))
+                .riskQuestions(new Integer[]{0, 0, 0})
+                .vehicle(new Vehicle(2000))
                 .build();
-
-        RiskResponse response = service.calculateRisk(request);
 
         RiskResponse expectedResponse = RiskResponse.builder()
                 .auto(ECONOMIC)
@@ -258,28 +120,50 @@ class RiskServiceTest {
                 .life(ECONOMIC)
                 .build();
 
-        assertEquals(expectedResponse, response);
+        assertEquals(expectedResponse, service.calculateRisk(userProfile));
     }
 
     @Test
-    void givenScenario() {
-        UserProfile request = UserProfile.builder()
+    void allRegular() {
+        UserProfile userProfile = UserProfile.builder()
                 .age(35)
-                .dependents(2)
-                .house(new House(OWNED))
-                .income(0)
-                .maritalStatus(MARRIED)
-                .riskQuestions(new Integer[]{0, 1, 0})
-                .vehicle(new Vehicle(2018))
+                .dependents(5)
+                .house(new House(MORTGAGED))
+                .income(300000)
+                .maritalStatus(SINGLE)
+                .riskQuestions(new Integer[]{1, 1, 0})
+                .vehicle(new Vehicle(2019))
                 .build();
 
         RiskResponse expectedResponse = RiskResponse.builder()
                 .auto(REGULAR)
-                .disability(INELIGIBLE)
-                .home(ECONOMIC)
+                .disability(REGULAR)
+                .home(REGULAR)
                 .life(REGULAR)
                 .build();
 
-        assertEquals(expectedResponse, service.calculateRisk(request));
+        assertEquals(expectedResponse, service.calculateRisk(userProfile));
+    }
+
+    @Test
+    void allResponsible() {
+        UserProfile userProfile = UserProfile.builder()
+                .age(41)
+                .dependents(3)
+                .house(new House(MORTGAGED))
+                .income(50000)
+                .maritalStatus(MARRIED)
+                .riskQuestions(new Integer[]{0, 1, 1})
+                .vehicle(new Vehicle(2018))
+                .build();
+
+        RiskResponse expectedResponse = RiskResponse.builder()
+                .auto(RESPONSIBLE)
+                .disability(RESPONSIBLE)
+                .home(RESPONSIBLE)
+                .life(RESPONSIBLE)
+                .build();
+
+        assertEquals(expectedResponse, service.calculateRisk(userProfile));
     }
 }

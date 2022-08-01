@@ -2,9 +2,6 @@ package com.origin.backendassignment.controller;
 
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import com.origin.backendassignment.response.ErrorResponse;
-import org.springframework.http.HttpStatus;
-import org.springframework.validation.BindingResult;
-import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -13,8 +10,6 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 
 import javax.validation.ConstraintViolation;
 import javax.validation.ConstraintViolationException;
-import java.lang.reflect.Field;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -44,7 +39,17 @@ public class ExceptionAdvice {
     @ExceptionHandler(InvalidFormatException.class)
     @ResponseStatus(BAD_REQUEST)
     public ErrorResponse handleInvalidFormatException(InvalidFormatException ex) {
-        return new ErrorResponse(List.of(ex.getMessage()));
+        String message = ex.getMessage();
+
+        if (message.contains("OwnershipStatus")) {
+            message = String.format("'%s' is not one of the values accepted for ownership_status: [mortgaged, owned]", ex.getValue());
+        }
+
+        if (message.contains("MaritalStatus")) {
+            message = String.format("'%s' is not one of the values accepted for marital_status: [single, married]", ex.getValue());
+        }
+
+        return new ErrorResponse(List.of(message));
     }
 
 }
