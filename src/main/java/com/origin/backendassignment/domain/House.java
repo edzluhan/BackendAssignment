@@ -4,9 +4,12 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Value;
 
+import javax.validation.constraints.NotNull;
+
 @Value
 public class House {
 
+    @NotNull(message = "ownership_status must not be null")
     private OwnershipStatus ownershipStatus;
 
     @JsonCreator

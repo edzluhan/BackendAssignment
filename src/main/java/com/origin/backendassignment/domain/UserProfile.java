@@ -21,6 +21,7 @@ public class UserProfile {
     @NotNull(message = "dependents must not be null")
     @PositiveOrZero(message = "dependents must be an integer equal or greater than 0")
     private Integer dependents;
+    @Valid
     private House house;
     @NotNull(message = "income must not be null")
     @PositiveOrZero(message = "Income must be an integer equal or greater than 0")

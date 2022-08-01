@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
 
 @Value
 public class Vehicle {
-    @NotNull
+    @NotNull(message = "Vehicle year must not be null")
     @PositiveOrZero(message = "Vehicle year must be an integer equal or greater than 0")
     private Integer year;
 
