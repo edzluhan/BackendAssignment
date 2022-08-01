@@ -2,6 +2,9 @@
 
 This application was developed using Java 11 (Oracle OpenJDK 11.0.2), Spring boot, Gradle, IntelliJ and guided by tests.
 
+I decided to use the rule design pattern, where the rules implement an interface, allowing to easily add or remove more
+logic making it easily extensible.
+
 ## How to run the application:
 
 To be able to run this application you will need to have some Java 11 SDK installed.
